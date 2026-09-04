@@ -30,7 +30,7 @@ This repository is not affiliated with or endorsed by any commercial audio-contr
 ## Highlights
 
 - **Real system volume control** — reads and changes the active output device volume and mute state through Core Audio.
-- **Per-app mixing** — discovers real Core Audio processes and applies independent volume and mute controls.
+- **Per-app mixing** — discovers real Core Audio processes and applies independent volume and mute controls, with direct percentage entry and compact 1% step buttons.
 - **Output routing** — sends an individual app to a selected audio output device.
 - **Volume boost** — supports up to 4x per-app gain when extra headroom is needed.
 - **Real-time equalizer** — applies ten-band tone and room presets with per-preset memory, stereo balance, preamp headroom, and peak protection at mutually exclusive total or per-app scopes.
@@ -47,6 +47,7 @@ This repository is not affiliated with or endorsed by any commercial audio-contr
 
 AudioFlow keeps dated, append-only product iterations in [CHANGELOG.md](CHANGELOG.md). Older release notes remain available under [`docs/`](docs/).
 
+- **2026-09-05 · 1.2.1** — added exact `0...100` volume entry, compact 1% step buttons, keyboard precision control, consistent percentage centering, and full localization/accessibility coverage. See [release notes](docs/RELEASE_NOTES_1.2.1.md).
 - **2026-08-14 · 1.2.0** — added real total/per-app EQ, stronger tone and room presets, per-preset memory and reset, stereo balance, multilingual EQ UI, conditional one-click EQ shutdown, and broad runtime/motion performance work. See [release notes](docs/RELEASE_NOTES_1.2.0.md).
 - **2026-08-14 · 1.1.0** — added Minimal and Full popover styles, tightened Minimal mode to 336 pt, and added persistent drag ordering for its app list. See [release notes](docs/RELEASE_NOTES_1.1.0.md).
 - **2026-08-13 · 1.0.0** — initial open-source release with system/per-app mixing, routing, organization, themes, localization, and DMG packaging. See [release notes](docs/RELEASE_NOTES_1.0.0.md).

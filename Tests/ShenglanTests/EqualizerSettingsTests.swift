@@ -2,6 +2,41 @@ import Foundation
 import Testing
 @testable import Shenglan
 
+@Test("Volume percentage conversion is rounded, clamped, and reversible")
+func volumePercentageConversion() {
+    #expect(VolumeLevel.percentage(from: -0.4) == 0)
+    #expect(VolumeLevel.percentage(from: 0.079_999) == 8)
+    #expect(VolumeLevel.percentage(from: 0.124) == 12)
+    #expect(VolumeLevel.percentage(from: 0.125) == 13)
+    #expect(VolumeLevel.percentage(from: 1.4) == 100)
+
+    #expect(VolumeLevel.scalar(fromPercentage: -4) == 0)
+    #expect(VolumeLevel.scalar(fromPercentage: 7) == 0.07)
+    #expect(VolumeLevel.scalar(fromPercentage: 100) == 1)
+    #expect(VolumeLevel.scalar(fromPercentage: 140) == 1)
+}
+
+@Test("Precision-volume controls are localized in every supported language")
+func precisionVolumeControlsAreLocalized() {
+    let labels: [AppLanguage: String] = [
+        .simplifiedChinese: "输入精确音量百分比",
+        .english: "Enter exact volume percentage",
+        .japanese: "正確な音量のパーセント値を入力",
+        .french: "Saisir le pourcentage exact du volume",
+        .german: "Genauen Lautstärkeprozentsatz eingeben",
+        .korean: "정확한 음량 백분율 입력"
+    ]
+
+    for language in AppLanguage.allCases {
+        #expect(L10n.tr("输入精确音量百分比", language: language) == labels[language])
+        #expect(L10n.tr("精调", language: language) != "精调" || language == .simplifiedChinese)
+        #expect(L10n.tr("增加 1%", language: language) != "增加 1%" || language == .simplifiedChinese)
+        #expect(L10n.tr("减少 1%", language: language) != "减少 1%" || language == .simplifiedChinese)
+        #expect(L10n.tr("每次调整 1%", language: language) != "每次调整 1%" || language == .simplifiedChinese)
+        #expect(L10n.tr("输入 0 到 100；选中滑杆后方向键每次调整 1%", language: language) != "输入 0 到 100；选中滑杆后方向键每次调整 1%" || language == .simplifiedChinese)
+    }
+}
+
 @Test("Each EQ preset retains its own adjusted profile")
 func eachPresetRetainsItsOwnAdjustedProfile() {
     var settings = EqualizerSettings()

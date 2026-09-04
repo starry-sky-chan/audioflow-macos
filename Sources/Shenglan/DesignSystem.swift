@@ -398,25 +398,38 @@ struct GlassSegmentButtonStyle: ButtonStyle {
 /// at 30 Hz while dragging and the exact final value is always committed. The
 /// native thumb still tracks every pointer event at the display refresh rate.
 struct FluidSlider: NSViewRepresentable {
+    @Environment(\.appLanguage) private var language
+
     let value: Double
     var range: ClosedRange<Double> = 0...1
+    var step: Double? = nil
+    var accessibilityName: String? = nil
     var onEditingChanged: (Bool) -> Void = { _ in }
     let onChange: (Double) -> Void
 
     init(
         value: Double,
         in range: ClosedRange<Double> = 0...1,
+        step: Double? = nil,
+        accessibilityName: String? = nil,
         onEditingChanged: @escaping (Bool) -> Void = { _ in },
         onChange: @escaping (Double) -> Void
     ) {
         self.value = value
         self.range = range
+        self.step = step
+        self.accessibilityName = accessibilityName
         self.onEditingChanged = onEditingChanged
         self.onChange = onChange
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(onEditingChanged: onEditingChanged, onChange: onChange)
+        Coordinator(
+            range: range,
+            step: step,
+            onEditingChanged: onEditingChanged,
+            onChange: onChange
+        )
     }
 
     func makeNSView(context: Context) -> TrackingSlider {
@@ -424,9 +437,12 @@ struct FluidSlider: NSViewRepresentable {
         slider.minValue = range.lowerBound
         slider.maxValue = range.upperBound
         slider.doubleValue = clamped(value)
+        slider.precisionStep = step
+        slider.altIncrementValue = step ?? 0
+        configureAccessibility(slider)
         slider.isContinuous = true
         slider.controlSize = .regular
-        slider.focusRingType = .none
+        slider.focusRingType = .default
         slider.isEnabled = true
         slider.target = context.coordinator
         slider.action = #selector(Coordinator.valueChanged(_:))
@@ -442,40 +458,68 @@ struct FluidSlider: NSViewRepresentable {
     func updateNSView(_ slider: TrackingSlider, context: Context) {
         context.coordinator.onEditingChanged = onEditingChanged
         context.coordinator.onChange = onChange
+        context.coordinator.range = range
+        context.coordinator.step = step
         slider.minValue = range.lowerBound
         slider.maxValue = range.upperBound
-        guard !context.coordinator.isTracking else { return }
-        let nextValue = clamped(value)
-        if abs(slider.doubleValue - nextValue) > 0.0005 {
-            slider.doubleValue = nextValue
+        slider.precisionStep = step
+        slider.altIncrementValue = step ?? 0
+        if !context.coordinator.isTracking {
+            let nextValue = clamped(value)
+            if abs(slider.doubleValue - nextValue) > 0.0005 {
+                slider.doubleValue = nextValue
+            }
         }
+        configureAccessibility(slider)
     }
 
     private func clamped(_ value: Double) -> Double {
         min(max(value, range.lowerBound), range.upperBound)
     }
 
+    private func configureAccessibility(_ slider: TrackingSlider) {
+        slider.setAccessibilityLabel(accessibilityName)
+        let usesPercentageScale = step == VolumeLevel.scalarStep
+            && abs(range.lowerBound) < 0.000_001
+            && abs(range.upperBound - 1) < 0.000_001
+        slider.setAccessibilityValueDescription(
+            usesPercentageScale
+                ? L10n.tr("\(VolumeLevel.percentage(from: slider.doubleValue))%", language: language)
+                : nil
+        )
+    }
+
     final class Coordinator: NSObject {
+        var range: ClosedRange<Double>
+        var step: Double?
         var onEditingChanged: (Bool) -> Void
         var onChange: (Double) -> Void
         private let limiter = VolumeEventLimiter(updatesPerSecond: 60)
         private(set) var isTracking = false
 
         init(
+            range: ClosedRange<Double>,
+            step: Double?,
             onEditingChanged: @escaping (Bool) -> Void,
             onChange: @escaping (Double) -> Void
         ) {
+            self.range = range
+            self.step = step
             self.onEditingChanged = onEditingChanged
             self.onChange = onChange
         }
 
         @objc func valueChanged(_ sender: NSSlider) {
+            let value = normalized(sender.doubleValue)
+            if abs(sender.doubleValue - value) > 0.000_001 {
+                sender.doubleValue = value
+            }
             if isTracking {
-                limiter.emit(sender.doubleValue, action: onChange)
+                limiter.emit(value, action: onChange)
             } else {
                 // Keyboard and accessibility changes are discrete, so they do
                 // not need drag throttling.
-                limiter.commit(sender.doubleValue, action: onChange)
+                limiter.commit(value, action: onChange)
             }
         }
 
@@ -485,21 +529,52 @@ struct FluidSlider: NSViewRepresentable {
         }
 
         func commit(_ value: Double) {
-            limiter.commit(value, action: onChange)
+            limiter.commit(normalized(value), action: onChange)
+        }
+
+        private func normalized(_ value: Double) -> Double {
+            let clamped = min(max(value, range.lowerBound), range.upperBound)
+            guard let step, step > 0 else { return clamped }
+            let offset = clamped - range.lowerBound
+            let stepped = range.lowerBound + (offset / step).rounded() * step
+            return min(max(stepped, range.lowerBound), range.upperBound)
         }
     }
 
     final class TrackingSlider: NSSlider {
         var onTrackingChanged: ((Bool) -> Void)?
         var onCommit: ((Double) -> Void)?
+        var precisionStep: Double?
         private var isPointerTracking = false
 
         override var mouseDownCanMoveWindow: Bool { false }
 
         override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
+        override func keyDown(with event: NSEvent) {
+            guard let precisionStep, precisionStep > 0 else {
+                super.keyDown(with: event)
+                return
+            }
+
+            let direction: Double
+            switch event.keyCode {
+            case 123, 125: direction = -1 // left / down
+            case 124, 126: direction = 1  // right / up
+            default:
+                super.keyDown(with: event)
+                return
+            }
+
+            let multiplier = event.modifierFlags.contains(.shift) ? 5.0 : 1.0
+            let nextValue = min(max(doubleValue + direction * precisionStep * multiplier, minValue), maxValue)
+            doubleValue = nextValue
+            sendAction(action, to: target)
+        }
+
         override func mouseDown(with event: NSEvent) {
             guard isEnabled else { return }
+            window?.makeFirstResponder(self)
             isPointerTracking = true
             onTrackingChanged?(true)
 
@@ -529,6 +604,303 @@ struct FluidSlider: NSViewRepresentable {
             isPointerTracking = false
         }
 
+    }
+}
+
+/// Replaces passive percentage text beside a volume slider with an editable
+/// percentage field. It keeps the existing compact row width, while direct
+/// 0...100 entry handles values that are difficult to land on with a short
+/// pointer track.
+struct VolumePercentageField: View {
+    private static let digitAdvance: CGFloat = {
+        let font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .regular)
+        return ("0" as NSString).size(withAttributes: [.font: font]).width
+    }()
+
+    @Environment(\.appLanguage) private var language
+    @FocusState private var percentageFieldFocused: Bool
+    @State private var draftPercentage: String
+    @State private var editingReported = false
+    @State private var draftWasEdited = false
+
+    let value: Double
+    var labelWidth: CGFloat = 52
+    var accessibilityName: String? = nil
+    var onEditingChanged: (Bool) -> Void = { _ in }
+    let onChange: (Double) -> Void
+
+    init(
+        value: Double,
+        labelWidth: CGFloat = 52,
+        accessibilityName: String? = nil,
+        onEditingChanged: @escaping (Bool) -> Void = { _ in },
+        onChange: @escaping (Double) -> Void
+    ) {
+        self.value = value
+        self.labelWidth = labelWidth
+        self.accessibilityName = accessibilityName
+        self.onEditingChanged = onEditingChanged
+        self.onChange = onChange
+        _draftPercentage = State(initialValue: String(VolumeLevel.percentage(from: value)))
+    }
+
+    private var percentage: Int {
+        VolumeLevel.percentage(from: value)
+    }
+
+    private var editableDraft: Binding<String> {
+        Binding(
+            get: { draftPercentage },
+            set: { newValue in
+                let changed = newValue != draftPercentage
+                draftPercentage = newValue
+                guard percentageFieldFocused, changed else { return }
+                beginUserEditing()
+            }
+        )
+    }
+
+    private var effectivePercentage: Int {
+        guard draftWasEdited,
+              let entered = Int(draftPercentage.trimmingCharacters(in: .whitespacesAndNewlines)) else {
+            return percentage
+        }
+        return min(max(entered, VolumeLevel.percentageRange.lowerBound), VolumeLevel.percentageRange.upperBound)
+    }
+
+    /// Size the editable number to its visible 1...3 digits, then center the
+    /// complete `number + %` group in the value area. A flexible, trailing
+    /// TextField pins `%` to the right edge and makes 8%, 12%, and 100% appear
+    /// to have different centers even though the outer control is unchanged.
+    private var numberFieldWidth: CGFloat {
+        let trimmed = draftPercentage.trimmingCharacters(in: .whitespacesAndNewlines)
+        let visibleCharacterCount = min(max(trimmed.count, 1), 3)
+        return ceil(Self.digitAdvance * CGFloat(visibleCharacterCount))
+    }
+
+    var body: some View {
+        HStack(spacing: 0) {
+            HStack(spacing: language == .french || language == .german ? 1 : 0) {
+                TextField("", text: editableDraft)
+                    .textFieldStyle(.plain)
+                    .font(ShenglanTypography.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(width: numberFieldWidth)
+                    .focused($percentageFieldFocused)
+                    .onSubmit {
+                        // Return is an explicit commit even when the user retyped
+                        // the same displayed integer over a fractional device value.
+                        beginUserEditing()
+                        // Ending focus funnels Return and click-away through the
+                        // same single commit path below, avoiding duplicate Core
+                        // Audio writes for the system master volume.
+                        percentageFieldFocused = false
+                    }
+                    .onKeyPress(phases: .down) { press in
+                        let characters = press.characters
+                        if characters.contains(where: \Character.isNumber)
+                            || characters == "\u{8}"
+                            || characters == "\u{7f}" {
+                            beginUserEditing()
+                        }
+                        return .ignored
+                    }
+                    .accessibilityLabel(accessibilityName ?? L10n.tr("音量", language: language))
+                    .accessibilityValue(L10n.tr("\(draftPercentage)%", language: language))
+                    .accessibilityHint(L10n.tr("输入精确音量百分比", language: language))
+
+                Text(verbatim: "%")
+                    .font(ShenglanTypography.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
+            .contentShape(Rectangle())
+            .simultaneousGesture(
+                TapGesture().onEnded {
+                    percentageFieldFocused = true
+                }
+            )
+
+            CompactVolumeStepperButtons(
+                percentage: effectivePercentage,
+                accessibilityName: accessibilityName ?? L10n.tr("音量", language: language),
+                language: language,
+                onAdjust: { applyPercentage(effectivePercentage + $0) }
+            )
+        }
+        .padding(.leading, 1)
+        .padding(.trailing, 1)
+        .frame(width: labelWidth, height: 20)
+        .background(
+            Color.primary.opacity(percentageFieldFocused ? 0.055 : 0.035),
+            in: RoundedRectangle(cornerRadius: 5, style: .continuous)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 5, style: .continuous)
+                .stroke(Color.accentColor.opacity(percentageFieldFocused ? 0.34 : 0), lineWidth: 1)
+        }
+        .help(L10n.tr("输入 0 到 100；选中滑杆后方向键每次调整 1%", language: language))
+        .onChange(of: value) { _, newValue in
+            // A newly opened NSPopover can focus this field automatically.
+            // Keep following hardware/runtime changes until the user actually
+            // types, rather than treating focus alone as an editing session.
+            guard !draftWasEdited else { return }
+            draftPercentage = String(VolumeLevel.percentage(from: newValue))
+        }
+        .onChange(of: percentageFieldFocused) { _, focused in
+            if focused {
+                draftWasEdited = false
+            } else {
+                let hadUserEdit = draftWasEdited
+                commitDraftPercentage()
+                if !hadUserEdit {
+                    draftPercentage = String(percentage)
+                }
+                if editingReported {
+                    editingReported = false
+                    onEditingChanged(false)
+                }
+            }
+        }
+        .onDisappear {
+            // A transient menu-bar popover can close while the field is still
+            // first responder. Commit before balancing the interaction guard
+            // so the typed value is neither lost nor allowed to freeze polling.
+            commitDraftPercentage()
+            if editingReported {
+                editingReported = false
+                onEditingChanged(false)
+            }
+        }
+    }
+
+    private func beginUserEditing() {
+        draftWasEdited = true
+        if !editingReported {
+            editingReported = true
+            onEditingChanged(true)
+        }
+    }
+
+    private func applyPercentage(_ requestedPercentage: Int) {
+        let clamped = min(
+            max(requestedPercentage, VolumeLevel.percentageRange.lowerBound),
+            VolumeLevel.percentageRange.upperBound
+        )
+        draftWasEdited = false
+        draftPercentage = String(clamped)
+        percentageFieldFocused = false
+        if editingReported {
+            editingReported = false
+            onEditingChanged(false)
+        }
+        let targetValue = VolumeLevel.scalar(fromPercentage: clamped)
+        guard abs(targetValue - VolumeLevel.clampedScalar(value)) > VolumeLevel.scalarComparisonTolerance else { return }
+        onChange(targetValue)
+    }
+
+    private func commitDraftPercentage() {
+        // NSPopover makes the first text field first responder when it opens.
+        // Losing that automatic focus must not quantize a hardware value the
+        // user never edited (for example 40.79% becoming 41%).
+        guard draftWasEdited else { return }
+        draftWasEdited = false
+        let trimmed = draftPercentage.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let entered = Int(trimmed) else {
+            draftPercentage = String(percentage)
+            return
+        }
+        let clamped = min(max(entered, VolumeLevel.percentageRange.lowerBound), VolumeLevel.percentageRange.upperBound)
+        draftPercentage = String(clamped)
+        let targetValue = VolumeLevel.scalar(fromPercentage: clamped)
+        guard abs(targetValue - VolumeLevel.clampedScalar(value)) > VolumeLevel.scalarComparisonTolerance else { return }
+        onChange(targetValue)
+    }
+}
+
+private struct CompactVolumeStepperButtons: View {
+    enum Direction: Hashable {
+        case increment
+        case decrement
+
+        var delta: Int { self == .increment ? 1 : -1 }
+        var symbol: String { self == .increment ? "chevron.up" : "chevron.down" }
+        var localizationKey: String { self == .increment ? "增加 1%" : "减少 1%" }
+    }
+
+    @State private var hoveredDirection: Direction?
+
+    let percentage: Int
+    let accessibilityName: String
+    let language: AppLanguage
+    let onAdjust: (Int) -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            stepButton(.increment)
+
+            Rectangle()
+                .fill(Color.primary.opacity(0.07))
+                .frame(height: 0.5)
+
+            stepButton(.decrement)
+        }
+        .frame(width: 14, height: 20)
+        .overlay(alignment: .leading) {
+            Rectangle()
+                .fill(Color.primary.opacity(0.08))
+                .frame(width: 0.5, height: 16)
+        }
+    }
+
+    private func stepButton(_ direction: Direction) -> some View {
+        let available = direction == .increment ? percentage < 100 : percentage > 0
+        let actionLabel = L10n.tr(direction.localizationKey, language: language)
+
+        return Button {
+            onAdjust(direction.delta)
+        } label: {
+            Image(systemName: direction.symbol)
+                .font(.system(size: 5.8, weight: .semibold))
+                .frame(width: 14, height: 9.75)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(CompactVolumeStepButtonStyle(isHovered: hoveredDirection == direction))
+        .disabled(!available)
+        .onHover { hovering in
+            if hovering {
+                hoveredDirection = direction
+            } else if hoveredDirection == direction {
+                hoveredDirection = nil
+            }
+        }
+        .help(actionLabel)
+        .accessibilityLabel("\(accessibilityName) \(actionLabel)")
+        .accessibilityValue(L10n.tr("\(percentage)%", language: language))
+    }
+}
+
+private struct CompactVolumeStepButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+    let isHovered: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundStyle(
+                isEnabled
+                    ? (configuration.isPressed ? Color.accentColor : Color.secondary.opacity(isHovered ? 0.86 : 0.46))
+                    : Color.secondary.opacity(0.2)
+            )
+            .background(
+                configuration.isPressed
+                    ? Color.accentColor.opacity(0.11)
+                    : Color.primary.opacity(isHovered ? 0.055 : 0),
+                in: RoundedRectangle(cornerRadius: 2, style: .continuous)
+            )
+            .animation(ShenglanMotion.press, value: configuration.isPressed)
+            .animation(ShenglanMotion.quick, value: isHovered)
     }
 }
 

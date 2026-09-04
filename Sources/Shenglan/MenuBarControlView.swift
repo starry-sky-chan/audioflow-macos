@@ -81,9 +81,13 @@ struct MenuBarControlView: View {
                     HStack {
                         Text(L10n.tr("系统音量")).font(ShenglanTypography.bodyStrong)
                         Spacer()
-                        Text(audio.masterMuted ? L10n.tr("已静音") : "\(Int(audio.masterVolume * 100))%")
-                            .font(ShenglanTypography.caption.monospacedDigit())
-                            .foregroundStyle(.secondary)
+                        VolumePercentageField(
+                            value: audio.masterMuted ? 0 : audio.masterVolume,
+                            accessibilityName: L10n.tr("系统音量", language: audio.language),
+                            onEditingChanged: audio.setUserInteractionActive,
+                            onChange: audio.setMasterVolume
+                        )
+                        .disabled(!audio.selectedOutputSupportsVolume)
                     }
                     HStack(spacing: 10) {
                         Button { audio.setMasterMuted(!audio.masterMuted) } label: {
@@ -93,6 +97,8 @@ struct MenuBarControlView: View {
                         .disabled(!audio.selectedOutputSupportsVolume)
                         FluidSlider(
                             value: audio.masterMuted ? 0 : audio.masterVolume,
+                            step: VolumeLevel.scalarStep,
+                            accessibilityName: L10n.tr("系统音量", language: audio.language),
                             onEditingChanged: audio.setUserInteractionActive,
                             onChange: audio.setMasterVolume
                         )
@@ -195,15 +201,20 @@ struct MenuBarControlView: View {
 
                 FluidSlider(
                     value: audio.masterMuted ? 0 : audio.masterVolume,
+                    step: VolumeLevel.scalarStep,
+                    accessibilityName: L10n.tr("整体音量", language: audio.language),
                     onEditingChanged: audio.setUserInteractionActive,
                     onChange: audio.setMasterVolume
                 )
                 .disabled(!audio.selectedOutputSupportsVolume)
 
-                Text(audio.masterMuted ? "0%" : "\(Int(audio.masterVolume * 100))%")
-                    .font(ShenglanTypography.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
-                    .frame(width: 34, alignment: .trailing)
+                VolumePercentageField(
+                    value: audio.masterMuted ? 0 : audio.masterVolume,
+                    accessibilityName: L10n.tr("整体音量", language: audio.language),
+                    onEditingChanged: audio.setUserInteractionActive,
+                    onChange: audio.setMasterVolume
+                )
+                .disabled(!audio.selectedOutputSupportsVolume)
             }
             .padding(.horizontal, 7)
             .frame(height: 44)
@@ -378,6 +389,9 @@ private struct MinimalMenuBarApplicationRow: View {
                 .lineLimit(1)
                 .truncationMode(.tail)
                 .frame(width: 78, alignment: .leading)
+                .accessibilityLabel(
+                    "\(L10n.tr(app.name))，\(current.isRunningOutput ? L10n.tr("正在发声") : L10n.tr("已暂停"))"
+                )
 
             Button {
                 audio.setApplicationMuted(id: app.id, muted: !current.isMuted)
@@ -393,6 +407,8 @@ private struct MinimalMenuBarApplicationRow: View {
 
             FluidSlider(
                 value: audio.masterMuted || current.isMuted ? 0 : current.volume,
+                step: VolumeLevel.scalarStep,
+                accessibilityName: "\(L10n.tr(app.name, language: audio.language)) \(L10n.tr("音量", language: audio.language))",
                 onEditingChanged: audio.setUserInteractionActive,
                 onChange: { audio.setApplicationVolume(id: app.id, volume: $0) }
             )
@@ -400,10 +416,13 @@ private struct MinimalMenuBarApplicationRow: View {
             .disabled(audio.masterMuted || !controlsAvailable)
             .opacity(audio.masterMuted || !controlsAvailable ? 0.5 : 1)
 
-            Text(audio.masterMuted || current.isMuted ? "0%" : "\(Int(current.volume * 100))%")
-                .font(ShenglanTypography.caption.monospacedDigit())
-                .foregroundStyle(.secondary)
-                .frame(width: 34, alignment: .trailing)
+            VolumePercentageField(
+                value: audio.masterMuted || current.isMuted ? 0 : current.volume,
+                accessibilityName: "\(L10n.tr(app.name, language: audio.language)) \(L10n.tr("音量", language: audio.language))",
+                onEditingChanged: audio.setUserInteractionActive,
+                onChange: { audio.setApplicationVolume(id: app.id, volume: $0) }
+            )
+            .disabled(audio.masterMuted || !controlsAvailable)
         }
         .frame(maxWidth: .infinity, minHeight: 44)
         .padding(.horizontal, 4)
@@ -415,9 +434,6 @@ private struct MinimalMenuBarApplicationRow: View {
         .contentShape(Rectangle())
         .offset(y: reorderDragOffset)
         .zIndex(reorderDragOffset == 0 ? 0 : 10)
-        .accessibilityLabel(
-            "\(L10n.tr(app.name))，\(current.isRunningOutput ? L10n.tr("正在发声") : L10n.tr("已暂停"))"
-        )
     }
 }
 
@@ -539,6 +555,8 @@ private struct MenuBarApplicationRow: View {
                 value: audio.masterMuted || app.isMuted
                     ? 0
                     : (audio.applicationState(id: app.id)?.volume ?? app.volume),
+                step: VolumeLevel.scalarStep,
+                accessibilityName: "\(L10n.tr(app.name, language: audio.language)) \(L10n.tr("音量", language: audio.language))",
                 onEditingChanged: audio.setUserInteractionActive,
                 onChange: { audio.setApplicationVolume(id: app.id, volume: $0) }
             )
@@ -546,10 +564,15 @@ private struct MenuBarApplicationRow: View {
             .disabled(audio.masterMuted || !controlsAvailable)
             .opacity(audio.masterMuted || !controlsAvailable ? 0.5 : 1)
 
-            Text(audio.masterMuted || app.isMuted ? "0%" : "\(Int(app.volume * 100))%")
-                .font(ShenglanTypography.caption.monospacedDigit())
-                .foregroundStyle(.secondary)
-                .frame(width: 34, alignment: .trailing)
+            VolumePercentageField(
+                value: audio.masterMuted || app.isMuted
+                    ? 0
+                    : (audio.applicationState(id: app.id)?.volume ?? app.volume),
+                accessibilityName: "\(L10n.tr(app.name, language: audio.language)) \(L10n.tr("音量", language: audio.language))",
+                onEditingChanged: audio.setUserInteractionActive,
+                onChange: { audio.setApplicationVolume(id: app.id, volume: $0) }
+            )
+            .disabled(audio.masterMuted || !controlsAvailable)
 
             routeMenu
         }
