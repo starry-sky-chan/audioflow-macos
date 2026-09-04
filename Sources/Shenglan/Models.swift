@@ -503,6 +503,28 @@ struct ApplicationMixState: Identifiable, Hashable {
     var isRunningOutput: Bool = true
 }
 
+/// One shared conversion boundary for every 0...1 volume surface. Keeping the
+/// displayed percentage and the value committed by the precision controls on
+/// the same rounded scale prevents values such as 7.999% from appearing as 7%
+/// while the audio engine is actually handling 8%.
+enum VolumeLevel {
+    static let percentageRange = 0...100
+    static let scalarStep = 0.01
+    static let scalarComparisonTolerance = 0.000_001
+
+    static func clampedScalar(_ value: Double) -> Double {
+        min(max(value, 0), 1)
+    }
+
+    static func percentage(from value: Double) -> Int {
+        Int((clampedScalar(value) * 100).rounded())
+    }
+
+    static func scalar(fromPercentage percentage: Int) -> Double {
+        Double(min(max(percentage, percentageRange.lowerBound), percentageRange.upperBound)) / 100
+    }
+}
+
 enum AudioApplicationCategory: Int, CaseIterable, Identifiable, Hashable {
     case music
     case video

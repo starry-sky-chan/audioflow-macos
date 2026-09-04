@@ -851,13 +851,20 @@ struct DeviceWorkspaceView: View {
                     .disabled(!runtime.outputSupportsVolume)
                     FluidSlider(
                         value: runtime.outputMuted ? 0 : runtime.outputVolume,
+                        step: VolumeLevel.scalarStep,
+                        accessibilityName: "\(device.name) \(L10n.tr("音量", language: audio.language))",
                         onEditingChanged: audio.setUserInteractionActive,
                         onChange: { audio.setOutputVolume($0, for: device.id) }
                     )
                     .disabled(!runtime.outputSupportsVolume)
-                    Text(L10n.tr("\(Int((runtime.outputMuted ? 0 : runtime.outputVolume) * 100))%"))
-                        .font(ShenglanTypography.caption.monospacedDigit())
-                        .frame(width: 42, alignment: .trailing)
+                    VolumePercentageField(
+                        value: runtime.outputMuted ? 0 : runtime.outputVolume,
+                        labelWidth: 52,
+                        accessibilityName: "\(device.name) \(L10n.tr("音量", language: audio.language))",
+                        onEditingChanged: audio.setUserInteractionActive,
+                        onChange: { audio.setOutputVolume($0, for: device.id) }
+                    )
+                    .disabled(!runtime.outputSupportsVolume)
                 }
                 if !device.isDefaultOutput {
                     Button(L10n.tr("设为系统默认输出")) { audio.selectOutput(device.id) }
@@ -876,13 +883,20 @@ struct DeviceWorkspaceView: View {
                     .disabled(!runtime.inputSupportsVolume)
                     FluidSlider(
                         value: runtime.inputVolume,
+                        step: VolumeLevel.scalarStep,
+                        accessibilityName: "\(device.name) \(L10n.tr("音量", language: audio.language))",
                         onEditingChanged: audio.setUserInteractionActive,
                         onChange: { audio.setInputVolume($0, for: device.id) }
                     )
                     .disabled(!runtime.inputSupportsVolume)
-                    Text(L10n.tr("\(Int(runtime.inputVolume * 100))%"))
-                        .font(ShenglanTypography.caption.monospacedDigit())
-                        .frame(width: 42, alignment: .trailing)
+                    VolumePercentageField(
+                        value: runtime.inputVolume,
+                        labelWidth: 52,
+                        accessibilityName: "\(device.name) \(L10n.tr("音量", language: audio.language))",
+                        onEditingChanged: audio.setUserInteractionActive,
+                        onChange: { audio.setInputVolume($0, for: device.id) }
+                    )
+                    .disabled(!runtime.inputSupportsVolume)
                 }
                 if !device.isDefaultInput {
                     Button(L10n.tr("设为系统默认输入")) { audio.selectInput(device.id) }

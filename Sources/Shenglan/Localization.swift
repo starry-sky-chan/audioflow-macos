@@ -58,6 +58,7 @@ enum L10n {
 
     private static let english: [String: String] = [
         "音色预设": "Tone Presets",
+        "音量": "Volume", "精调": "Fine adjustment", "增加 1%": "Increase by 1%", "减少 1%": "Decrease by 1%", "输入精确音量百分比": "Enter exact volume percentage", "每次调整 1%": "Adjust by 1%", "输入 0 到 100；选中滑杆后方向键每次调整 1%": "Enter 0 to 100; after selecting the slider, arrow keys adjust by 1%",
         "重置预设": "Reset Preset", "恢复当前预设的默认参数，不影响其他预设记忆": "Restore this preset's defaults without changing other preset memories", "总均衡器的%@已重置": "Reset %@ in the total equalizer", "应用均衡器的%@已重置": "Reset %@ in the app equalizer", "左右声道平衡": "Stereo Balance", "只衰减一侧声道，不额外提高音量": "Attenuate one channel without adding volume", "居中": "Center",
         "音合流": "AudioFlow", "系统与应用声音": "System & App Audio", "混音": "Mixer", "设备": "Devices", "设置": "Settings",
         "通用": "General", "外观": "Appearance", "权限": "Permissions", "启动与菜单栏": "Launch & Menu Bar", "主题与玻璃材质": "Theme & Glass", "系统授权状态": "System Access",
@@ -130,6 +131,7 @@ enum L10n {
 
     private static let japaneseSupplement: [String: String] = [
         "音色预设": "音色プリセット",
+        "音量": "音量", "精调": "微調整", "增加 1%": "1%上げる", "减少 1%": "1%下げる", "输入精确音量百分比": "正確な音量のパーセント値を入力", "每次调整 1%": "1%ずつ調整", "输入 0 到 100；选中滑杆后方向键每次调整 1%": "0〜100を入力。スライダーを選択すると、矢印キーで1%ずつ調整できます",
         "重置预设": "プリセットをリセット", "恢复当前预设的默认参数，不影响其他预设记忆": "現在のプリセットだけを初期値に戻し、ほかの記憶は保持します", "总均衡器的%@已重置": "全体イコライザーの%@をリセットしました", "应用均衡器的%@已重置": "アプリイコライザーの%@をリセットしました", "左右声道平衡": "左右チャンネルバランス", "只衰减一侧声道，不额外提高音量": "反対側のチャンネルだけを減衰し、音量は上げません", "居中": "中央",
         "总均衡器": "全体イコライザー", "应用均衡器": "アプリイコライザー", "应用均衡器…": "アプリイコライザー…", "原声直通": "原音スルー", "HiFi 清晰": "HiFiクリア", "人声清晰": "ボーカル強調", "低音增强": "低音強調", "流行": "ポップ", "摇滚": "ロック", "自定义": "カスタム", "旁路直通": "バイパス", "已开启": "有効", "启用": "有効", "完成": "完了", "关闭EQ": "EQをオフ", "关闭所有EQ": "すべてのEQをオフ", "关闭总均衡器和所有应用均衡器，保留预设参数": "全体EQとすべてのアプリEQをオフにし、プリセット値は保持します", "已关闭所有EQ": "すべてのEQをオフにしました",
         "音色": "音色", "空间场景": "空間", "小房间": "小部屋", "录音棚": "録音スタジオ", "私人影院": "ホームシアター", "剧场": "劇場", "音乐厅": "コンサートホール", "教堂": "大聖堂", "空间强度": "空間の強さ", "控制房间与剧场混响的湿声比例": "部屋や劇場の残響を原音に混ぜる量を調整します", "重置": "リセット", "恢复原声直通，并保留最近一次自定义设置": "原音スルーに戻し、直近のカスタム設定は保持します", "自动保存并恢复最近一次自定义设置": "直近のカスタム設定を自動保存・復元します", "总均衡器已重置": "全体イコライザーをリセットしました", "应用均衡器已重置": "アプリイコライザーをリセットしました",
@@ -164,6 +166,7 @@ enum L10n {
 
     private static let frenchSupplement: [String: String] = [
         "音色预设": "Préréglages",
+        "音量": "Volume", "精调": "Réglage fin", "增加 1%": "Augmenter de 1 %", "减少 1%": "Réduire de 1 %", "输入精确音量百分比": "Saisir le pourcentage exact du volume", "每次调整 1%": "Régler par pas de 1 %", "输入 0 到 100；选中滑杆后方向键每次调整 1%": "Saisissez une valeur de 0 à 100 ; après avoir sélectionné le curseur, les flèches règlent le volume par pas de 1 %",
         "重置预设": "Réinitialiser le préréglage", "恢复当前预设的默认参数，不影响其他预设记忆": "Rétablit ce préréglage sans modifier la mémoire des autres", "总均衡器的%@已重置": "%@ réinitialisé dans l’égaliseur général", "应用均衡器的%@已重置": "%@ réinitialisé dans l’égaliseur d’app", "左右声道平衡": "Balance stéréo", "只衰减一侧声道，不额外提高音量": "Atténue un canal sans augmenter le volume", "居中": "Centre",
         "总均衡器": "Égaliseur général", "应用均衡器": "Égaliseur d’app", "应用均衡器…": "Égaliseur d’app…", "原声直通": "Son direct", "HiFi 清晰": "Clarté Hi-Fi", "人声清晰": "Voix claires", "低音增强": "Graves renforcés", "流行": "Pop", "摇滚": "Rock", "自定义": "Personnalisé", "旁路直通": "Bypass", "已开启": "Activé", "启用": "Activer", "完成": "Terminé", "关闭EQ": "Désactiver l’EQ", "关闭所有EQ": "Désactiver tous les EQ", "关闭总均衡器和所有应用均衡器，保留预设参数": "Désactiver l’égaliseur général et tous les égaliseurs d’app en conservant les préréglages", "已关闭所有EQ": "Tous les égaliseurs sont désactivés",
         "音色": "Tonalité", "空间场景": "Espaces", "小房间": "Petite pièce", "录音棚": "Studio", "私人影院": "Home cinéma", "剧场": "Théâtre", "音乐厅": "Salle de concert", "教堂": "Cathédrale", "空间强度": "Intensité de l’espace", "控制房间与剧场混响的湿声比例": "Règle la quantité de réverbération de la pièce ou du théâtre mélangée au son d’origine", "重置": "Réinitialiser", "恢复原声直通，并保留最近一次自定义设置": "Rétablit le son direct et conserve le dernier réglage personnalisé", "自动保存并恢复最近一次自定义设置": "Enregistre et restaure automatiquement le dernier réglage personnalisé", "总均衡器已重置": "Égaliseur général réinitialisé", "应用均衡器已重置": "Égaliseur d’app réinitialisé",
@@ -198,6 +201,7 @@ enum L10n {
 
     private static let germanSupplement: [String: String] = [
         "音色预设": "Klangprofile",
+        "音量": "Lautstärke", "精调": "Feineinstellung", "增加 1%": "Um 1 % erhöhen", "减少 1%": "Um 1 % verringern", "输入精确音量百分比": "Genauen Lautstärkeprozentsatz eingeben", "每次调整 1%": "In 1-%-Schritten anpassen", "输入 0 到 100；选中滑杆后方向键每次调整 1%": "0 bis 100 eingeben; nach Auswahl des Reglers ändern die Pfeiltasten den Wert um 1 %",
         "重置预设": "Profil zurücksetzen", "恢复当前预设的默认参数，不影响其他预设记忆": "Nur dieses Profil zurücksetzen; andere Erinnerungen bleiben erhalten", "总均衡器的%@已重置": "%@ im Gesamt-Equalizer zurückgesetzt", "应用均衡器的%@已重置": "%@ im App-Equalizer zurückgesetzt", "左右声道平衡": "Stereobalance", "只衰减一侧声道，不额外提高音量": "Dämpft nur einen Kanal, ohne die Lautstärke zu erhöhen", "居中": "Mitte",
         "总均衡器": "Gesamt-Equalizer", "应用均衡器": "App-Equalizer", "应用均衡器…": "App-Equalizer…", "原声直通": "Originaldurchleitung", "HiFi 清晰": "HiFi-Klarheit", "人声清晰": "Sprachklarheit", "低音增强": "Bassverstärkung", "流行": "Pop", "摇滚": "Rock", "自定义": "Benutzerdefiniert", "旁路直通": "Durchleitung", "已开启": "Aktiviert", "启用": "Aktivieren", "完成": "Fertig", "关闭EQ": "EQ ausschalten", "关闭所有EQ": "Alle EQs ausschalten", "关闭总均衡器和所有应用均衡器，保留预设参数": "Gesamt- und alle App-Equalizer ausschalten; Preset-Werte bleiben erhalten", "已关闭所有EQ": "Alle Equalizer ausgeschaltet",
         "音色": "Klang", "空间场景": "Räume", "小房间": "Kleiner Raum", "录音棚": "Studio", "私人影院": "Heimkino", "剧场": "Theater", "音乐厅": "Konzertsaal", "教堂": "Kathedrale", "空间强度": "Raumintensität", "控制房间与剧场混响的湿声比例": "Regelt den Anteil des Raum- oder Theaterhalls am Originalton", "重置": "Zurücksetzen", "恢复原声直通，并保留最近一次自定义设置": "Originaldurchleitung wiederherstellen und letzte benutzerdefinierte Einstellung behalten", "自动保存并恢复最近一次自定义设置": "Letzte benutzerdefinierte Einstellung automatisch speichern und wiederherstellen", "总均衡器已重置": "Gesamt-Equalizer zurückgesetzt", "应用均衡器已重置": "App-Equalizer zurückgesetzt",
@@ -232,6 +236,7 @@ enum L10n {
 
     private static let koreanSupplement: [String: String] = [
         "音色预设": "음색 프리셋",
+        "音量": "음량", "精调": "미세 조절", "增加 1%": "1% 높이기", "减少 1%": "1% 낮추기", "输入精确音量百分比": "정확한 음량 백분율 입력", "每次调整 1%": "1%씩 조절", "输入 0 到 100；选中滑杆后方向键每次调整 1%": "0~100을 입력하세요. 슬라이더를 선택하면 화살표 키로 1%씩 조절할 수 있습니다",
         "重置预设": "프리셋 재설정", "恢复当前预设的默认参数，不影响其他预设记忆": "현재 프리셋만 기본값으로 되돌리고 다른 프리셋 기억은 유지합니다", "总均衡器的%@已重置": "전체 이퀄라이저의 %@ 프리셋을 재설정했습니다", "应用均衡器的%@已重置": "앱 이퀄라이저의 %@ 프리셋을 재설정했습니다", "左右声道平衡": "좌우 채널 밸런스", "只衰减一侧声道，不额外提高音量": "한쪽 채널만 감쇠하며 음량을 추가로 높이지 않습니다", "居中": "중앙",
         "总均衡器": "전체 이퀄라이저", "应用均衡器": "앱 이퀄라이저", "应用均衡器…": "앱 이퀄라이저…", "原声直通": "원음 패스스루", "HiFi 清晰": "HiFi 선명도", "人声清晰": "보컬 선명도", "低音增强": "저음 강화", "流行": "팝", "摇滚": "록", "自定义": "사용자 지정", "旁路直通": "바이패스", "已开启": "활성화됨", "启用": "활성화", "完成": "완료", "关闭EQ": "EQ 끄기", "关闭所有EQ": "모든 EQ 끄기", "关闭总均衡器和所有应用均衡器，保留预设参数": "전체 EQ와 모든 앱 EQ를 끄고 프리셋 값은 유지합니다", "已关闭所有EQ": "모든 이퀄라이저를 껐습니다",
         "音色": "음색", "空间场景": "공간 장면", "小房间": "작은 방", "录音棚": "녹음 스튜디오", "私人影院": "홈 시어터", "剧场": "극장", "音乐厅": "콘서트홀", "教堂": "대성당", "空间强度": "공간 강도", "控制房间与剧场混响的湿声比例": "방이나 극장 잔향을 원음에 섞는 비율을 조절합니다", "重置": "재설정", "恢复原声直通，并保留最近一次自定义设置": "원음 패스스루로 복원하고 최근 사용자 지정 설정은 유지합니다", "自动保存并恢复最近一次自定义设置": "최근 사용자 지정 설정을 자동으로 저장하고 복원합니다", "总均衡器已重置": "전체 이퀄라이저를 재설정했습니다", "应用均衡器已重置": "앱 이퀄라이저를 재설정했습니다",

@@ -389,6 +389,8 @@ private struct SystemVolumeDock: View {
 
                 FluidSlider(
                     value: audio.masterMuted ? 0 : audio.masterVolume,
+                    step: VolumeLevel.scalarStep,
+                    accessibilityName: L10n.tr("系统主音量", language: audio.language),
                     onEditingChanged: audio.setUserInteractionActive,
                     onChange: audio.setMasterVolume
                 )
@@ -606,7 +608,7 @@ private struct CircularVolumeControl: View {
                 Image(systemName: muted || displayedValue < 0.001 ? "speaker.slash.fill" : "speaker.wave.2.fill")
                     .font(.system(size: 32, weight: .semibold))
                     .foregroundStyle(.secondary)
-                Text(L10n.tr("\(Int(displayedValue * 100))%"))
+                Text(L10n.tr("\(VolumeLevel.percentage(from: displayedValue))%"))
                     .font(ShenglanTypography.sectionTitle.monospacedDigit())
             }
 
@@ -646,10 +648,17 @@ private struct CircularVolumeControl: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(L10n.tr("系统主音量"))
-        .accessibilityValue("\(Int(displayedValue * 100))%")
+        .accessibilityValue("\(VolumeLevel.percentage(from: displayedValue))%")
         .accessibilityAdjustableAction { direction in
-            let delta = direction == .increment ? 0.05 : -0.05
-            onChange(max(0, min(1, currentValue + delta)))
+            let percentageDelta: Int
+            switch direction {
+            case .increment: percentageDelta = 1
+            case .decrement: percentageDelta = -1
+            @unknown default: return
+            }
+            onChange(VolumeLevel.scalar(
+                fromPercentage: VolumeLevel.percentage(from: displayedValue) + percentageDelta
+            ))
         }
     }
 
@@ -671,13 +680,13 @@ private struct CircularVolumeControl: View {
     }
 
     private func continueTracking(at point: CGPoint) {
-        let nextValue = value(for: point)
+        let nextValue = canonicalVolume(for: point)
         localValue = nextValue
         eventLimiter.emit(nextValue, action: onChange)
     }
 
     private func endTracking(at point: CGPoint) {
-        let finalValue = value(for: point)
+        let finalValue = canonicalVolume(for: point)
         localValue = finalValue
         eventLimiter.commit(finalValue, action: onChange)
         isEditing = false
@@ -703,6 +712,10 @@ private struct CircularVolumeControl: View {
         // tiny movement at zero caused a full-volume jump.
         let gapMidpoint = (wrappedEnd + startDegrees) / 2
         return degrees < gapMidpoint ? 1 : 0
+    }
+
+    private func canonicalVolume(for point: CGPoint) -> Double {
+        VolumeLevel.scalar(fromPercentage: VolumeLevel.percentage(from: value(for: point)))
     }
 }
 
@@ -1001,17 +1014,26 @@ private struct ActiveApplicationRow: View {
             value: audio.masterMuted || app.isMuted
                 ? 0
                 : (audio.applicationState(id: app.id)?.volume ?? app.volume),
+            step: VolumeLevel.scalarStep,
+            accessibilityName: "\(L10n.tr(app.name, language: audio.language)) \(L10n.tr("音量", language: audio.language))",
             onEditingChanged: audio.setUserInteractionActive,
             onChange: { audio.setApplicationVolume(id: app.id, volume: $0) }
         )
-        .disabled(!controlsAvailable)
-        .opacity(controlsAvailable ? 1 : 0.5)
+        .disabled(audio.masterMuted || !controlsAvailable)
+        .opacity(audio.masterMuted || !controlsAvailable ? 0.5 : 1)
     }
 
     private var volumeLabel: some View {
-        Text(audio.masterMuted || app.isMuted ? "0%" : "\(Int(app.volume * 100))%")
-            .font(ShenglanTypography.caption.monospacedDigit())
-            .frame(width: 40, alignment: .trailing)
+        VolumePercentageField(
+            value: audio.masterMuted || app.isMuted
+                ? 0
+                : (audio.applicationState(id: app.id)?.volume ?? app.volume),
+            labelWidth: 52,
+            accessibilityName: "\(L10n.tr(app.name, language: audio.language)) \(L10n.tr("音量", language: audio.language))",
+            onEditingChanged: audio.setUserInteractionActive,
+            onChange: { audio.setApplicationVolume(id: app.id, volume: $0) }
+        )
+        .disabled(audio.masterMuted || !controlsAvailable)
     }
 
     private func routeMenu(width: CGFloat, height: CGFloat) -> some View {

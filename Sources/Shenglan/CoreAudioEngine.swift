@@ -1854,7 +1854,7 @@ final class AudioController: ObservableObject {
         // stays under the pointer. Potentially blocking HAL writes run on a
         // dedicated serial queue and therefore cannot steal AppKit tracking
         // frames from the main run loop.
-        if abs(masterVolume - requested) > 0.0005 { masterVolume = requested }
+        if abs(masterVolume - requested) > VolumeLevel.scalarComparisonTolerance { masterVolume = requested }
         if requested > 0.001 { masterMuted = false }
         deviceWriteQueue.async { [weak self] in
             do {
@@ -1863,7 +1863,10 @@ final class AudioController: ObservableObject {
                 DispatchQueue.main.async { [weak self] in
                     guard let self, self.masterVolumeWriteSequence == sequence else { return }
                     if self.activeUserInteractions == 0 {
-                        self.statusMessage = L10n.format("系统主音量已同步为 %@%%", String(Int(requested * 100)))
+                        self.statusMessage = L10n.format(
+                            "系统主音量已同步为 %@%%",
+                            String(VolumeLevel.percentage(from: requested))
+                        )
                     }
                 }
             } catch {
@@ -2069,7 +2072,7 @@ final class AudioController: ObservableObject {
     func setApplicationVolume(id: AudioObjectID, volume: Double) {
         let requested = min(max(volume, 0), 1)
         guard let index = applications.firstIndex(where: { $0.id == id }) else { return }
-        let needsVolumeUpdate = abs(applications[index].volume - requested) > 0.0005
+        let needsVolumeUpdate = abs(applications[index].volume - requested) > VolumeLevel.scalarComparisonTolerance
         let needsUnmute = requested > 0.001 && applications[index].isMuted
         guard needsVolumeUpdate || needsUnmute else { return }
         applications[index].volume = requested
